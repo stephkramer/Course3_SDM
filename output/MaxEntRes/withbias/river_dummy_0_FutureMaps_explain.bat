@@ -1,0 +1,2 @@
+java -mx500m -cp "/E:/PopDynIZW Dropbox/Teaching/_TU_BiodivDynamics2020/MaxEnt/maxent.jar;E:\PopDynIZW Dropbox\Teaching\_TU_BiodivDynamics2020\MaxEnt\maxent.jar" density.Explain -l "E:\PopDynIZW Dropbox\Teaching\_TU_BiodivDynamics2020\output\MaxEntRes\withbias\river_dummy_0.lambdas" "E:\PopDynIZW Dropbox\Teaching\_TU_BiodivDynamics2020\output\MaxEntRes\withbias\river_dummy_0_FutureMaps.asc" "E:\PopDynIZW Dropbox\Teaching\_TU_BiodivDynamics2020\DataBorneo\FutureMaps"
+@if errorlevel 1 pause
