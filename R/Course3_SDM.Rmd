@@ -81,9 +81,12 @@ title: "Tutorial Part III - SDM preparations"
    library(viridis)
    library(rgeos)
    library(rgl)
-   library(rasterVis)
+ # library(rasterVis) 
    library(unmarked)
    library(spatstat)
+
+## check that the package terra is detached!
+# detach(package:terra)
 ```
 
 ## Set the workspace
@@ -100,7 +103,7 @@ recs_wd <- paste(root_wd,"/","_DataBorneo/BaseRecords",sep='')
 
 # the output folder should have been created by you during Tutorial 2 'R goes spatial'.
 # It should contain the hillshade.asc
-output_wd <- here('output')
+output_wd <- 'E:/PopDynIZW Dropbox/Steph Kramer/_GitHub/output'
 
 setwd(output_wd) ## set to the OUTPUT folder!
 getwd()
@@ -182,6 +185,8 @@ River_shp_sf <- st_read(dsn = maps_wd,
 
 ### Load point df and convert to spatial object
 
+
+These are our observations of the species.
 ```{r}
 ### The spatial point data (species records) (repetition) ###
 
@@ -242,11 +247,18 @@ plot(agg_pred)
 ```{r}
 raster::pairs(agg_pred)
 ```
-What do you actually see? Which method was used? Check the help! (?pairs). To make it more explicit, set the argument inside the function.
+
+What do you actually see? Which method was used? Check the help! (?pairs -> raster package). You will see the help is not very helpful, you have to search inside the 'cor()' function. There you see you can set the argument:
 
 ```{r}
-# Plot the differences (rsiduals) between the rasters:
-diff <- raster::corLocal(x = agg_pred[[1]], y = agg_pred[[3]], method ='spearman')
+raster::pairs(agg_pred, method = 'kendall')
+```
+
+
+```{r}
+# Plot the differences (residuals) between the rasters:
+diff <- raster::corLocal(x = agg_pred[[1]], y = agg_pred[[2]], method = 'spearman')
+plot(diff)
 ```
 
 
