@@ -1,7 +1,7 @@
 ---
 title: "Course Species Distribution Modelling (SDM)"
 date: "`r Sys.Date()`"
-author: Stephanie Kramer-Schadt
+author: Stephanie Kramer-Schadt & Jürgen Niedballa
 output:
   rmdformats::readthedown:
     code_folding: show
@@ -29,34 +29,6 @@ p {color: Grey;}
 </head>
 
 
-# Header 1
-
-start to write text here
-
-title: "Tutorial Part III - SDM preparations"
-# author: Stephanie Kramer-Schadt, 
-#         with Juergen Niedballa, Moritz Wenzler, Pierre Gras
-
-## Header 2
-
-``` bash
-.
-├── .gitignore
-├── .Rbuildignore
-├── data-raw
-│   └── csv file with field data
-├── output
-│   └── csv file with results
-├── plots
-├── R
-│   └── 01_khulan.Rmd with analysis code and knitted html
-├── Rproj filename
-└── README.Rmd etc
-```
-
-
-
-
 
 ```{r, results="asis", echo=FALSE, message=FALSE, warning=FALSE}
 #res <- knitr::knit_child('_example_body.Rmd', quiet = TRUE)
@@ -64,6 +36,7 @@ title: "Tutorial Part III - SDM preparations"
 ```
 
 # Preparations
+
 ## Load libraries
 
 ```{r}
@@ -342,68 +315,89 @@ bias1[values(bias1 == 0)] <- 0.01 # because MaxEnt
 table(values(bias1))
 ```
 
-
+Now compare the rasters - do they have the same extent, cell size etc?
 ```{r}
-### Compare rasters - Are they the same?
-
-# The input rasters all have the same amount of cells, i.e. ras24
-# (or any other of the maps in the predictors stack) can be used as a template/ mask.
 compareRaster(ras24,bias1) # the same?
+```
 
+check for the length of the NODATA values:
+```{r}
 # Are they really the same???
 length(which(!is.na(values(bias1))))
 length(which(!is.na(values(ras24))))
+```
+Nice! Now plot it:
 
-# save into Output folder, which is your working directory: 
-# check with getwd() if you're not sure of wd
+```{r}
+### Plot the bias file
+plot(bias1, col = viridis(7)) #or col = grey.colors(7)
+```
 
-#bias_agg <- aggregate(bias1, fact=75,FUN=mean)
-#writeRaster(bias_agg, filename="bias_agg.asc", datatype='ascii',
+### Save the bias file
+
+```{r}
+## save into Output folder, which is your working directory: 
+## check with getwd() if you're not sure of wd
+
+## in case you want it aggregated
+# bias_agg <- aggregate(bias1, fact=50,FUN=mean)
+# writeRaster(bias_agg, filename="bias_agg.asc", datatype='ascii',
 #            overwrite=TRUE,NAflag=-9999)
 
-
-
-writeRaster(bias1, filename="bias1.asc", datatype='ascii',
+writeRaster(bias1, filename="bias_2022.asc", datatype='ascii',
             overwrite=TRUE,NAflag=-9999)
+```
 
-# Please change the cell size in the header of the bias ascii 'by hand'
-# before entering it into MaxEnt!!!**
-# Sometimes there are long numbers!
-# By hand means: please open the bias1.asc file in the Editor
-# set CELLSIZE 0.0083333337997189 to 0.0083333338
+Now, create folders for the MaxEnt output by hand or do it with the following code. We want a subfolder in our output-folder, called MaxEntRes, with two subfolders called 'bias' and 'nobias'.
 
-
-### Plot the bias file
-plot(bias1, col = grey.colors(7))
-
-################  end ##########################################################
-# either create the following folders in R or do it by hand in the explorer:
+```{r}
 #dir.create(path = file.path(output_wd, "MaxEntRes"), showWarnings = FALSE)
 #dir.create(path = file.path(output_wd, "/MaxEntRes", "nobias"),showWarnings = FALSE)
 #dir.create(path = file.path(output_wd, "/MaxEntRes", "withbias"),showWarnings = FALSE)
 
+```
 
-#### if MaxEnt is not working with bias file, 
-# exchange full ascii header with copy-paste
+Before we work with MaxEnt, please inspect the header of your bias file by opening it in a normal text editor. Mine looks like: <br> <br> 
+
+NCOLS 1423 <br> 
+NROWS 1425 <br> 
+XLLCORNER 108.334122887 <br> 
+YLLCORNER -4.374012999 <br> 
+CELLSIZE 0.0083333337997189 <br> 
+NODATA_value -9999 <br> 
+
+If this throws an error in MaxEnt, please change the <br>
+CELLSIZE from 0.0083333337997189 to *0.0083333338* by hand! That is, the header should read: <br>
 
 
+ncols         1423   <br> 
+nrows         1425   <br> 
+xllcorner     108.33412288693  <br> 
+yllcorner     -4.3740129986359 <br> 
+cellsize      0.0083333338  <br> 
+NODATA_value  -9999   <br> 
+
+(Please, without <br> if you use copy-paste from my .rmd course script.....)
+
+```{r}
 #### meanwhile clicking Maxent.... 
 # (or: do it with R package dismo, but this is another story
 #  which will be taught another time....)
+```
 
+# Accessing MaxEnt results
 
-################################################################################
-### Accessing MaxEnt results
-################################################################################
+## List the results
 
+```{r}
 # Have a look at the MaxEnt layers produced
 # MaxEnt saves the mean of x repetitions in _avg.asc
 
-# only works with the folder structure
+# The script now only works with the folder structure
 # MaxEntRes/nobias
 # MaxEntres/withbias
 
-# new argument 'recursive' means, that also subf?lders are checked!
+# new argument 'recursive' means, that also subfolders are checked!
 infiles <- list.files(path=paste(output_wd,'/MaxEntRes',
                                  sep=''),pattern='_avg.asc$',
                       full.names=TRUE,recursive=TRUE )
@@ -418,17 +412,15 @@ infiles
 #     /withbias/river_dummy_avg.asc"
 #[4] "c:/Users/kramer/Dropbox/.../MaxEntRes
 #     /withbias/river_dummy_FutureMaps_avg.asc"
+```
 
-
-### Stack results file and make usual plot
-
-# IF you have a slow computer, 
-# please use the workaround with function aggregate() from above
-
-me_stack <- aggregate(stack(infiles[c(1:4)]),fact= 50, FUN = mean )
+## Stack results file and make usual plot
+```{r}
+## IF you have a slow computer, 
+## please use the workaround with function aggregate() from above:
+# me_stack <- aggregate(stack(infiles[c(1:4)]),fact= 50, FUN = mean )
 
 me_stack <- stack(infiles[c(1:4)])
-
 
 # name sequence according to infiles list above
 names(me_stack) <- c('curr_noBias','fut_noBias',
@@ -436,22 +428,23 @@ names(me_stack) <- c('curr_noBias','fut_noBias',
 
 #par(mar=c(4,4,3,3), oma=c(2,2,2,2))
 
-plot(me_stack,col=viridis(100)) # note: I might use a different example
+plot(me_stack,col=viridis(100)) # note: I might use a different example than you did in MaxEnt
+```
 
-### Make violin plot
-# Rearrange order to better compare impact of bias file
-# i.e. plot present climate maps next to each other, and the future ones
-#bwplot(me_stack)
-bwplot(me_stack,layers = c(1,3,2,4)) #rearrange
+Check the range of the values
 
-# alternative
+```{r}
 boxplot(me_stack,layers = c(1,3,2,4),notch=T,outline=F)
+```
+
+How would you interpret the results?
 
 
-################################################################################
-### Threshold selection
-################################################################################
 
+## Threshold selection
+
+You should have results for the runs with a bias file and without:
+```{r}
 # Use maxentResults.csv to access threshold value
 # column: 10th percentile training presence logistic threshold
 
@@ -465,67 +458,104 @@ me_res
 #     /nobias/maxentResults.csv"
 #[2] "c:/Users/kramer/Dropbox/.../MaxEntRes
 #     /withbias/maxentResults.csv"
+```
+
+Now we do some elegant trick: we store both files as two objects in a list! Similar to tacking rasters, a bit....
+```{r}
 store_res <- lapply(me_res,FUN=read.csv) #store as list obj.
 head(store_res) # list object with 2 slots
-str(store_res)
+# str(store_res)
 store_res[[1]]
+```
 
-# Extract the values at column '10th percentile' at position nrep +1
-# (= nrow command) to access avg value of all repetitions
+We are searching for the column with the threshold.
+```{r}
+## Extract the values at column '10th percentile' at position nrep +1
+## (= nrow command) to access avg value of all repetitions at the lowest row
 
 zename<-'X10.percentile.training.presence.logistic.threshold' # check if the column name is the same !!!!!
 # Achtung! 
 # In MaxEnt 3.4.1 heisst Spalte 'X10.percentile.training.presence.Logistic.threshold'
+zename
+```
+
+Now check which column number that is....
+
+```{r}
 zecol <-which(colnames(store_res[[1]]) == zename) 
 zecol
+```
 
-# a little head twister:
-# access each element of your list, which is a whole dataset with store_res[[1]]
-# and inside this list object = data.frame, access the element of
-# the 8last row (nrow), and the column zecol] containing the threshold value
+... and extract the threshold value :
+```{r}
+## a little head twister:
+## access each element of your list, which is a whole dataset with store_res[[1]]
+## and inside this list object = data.frame, access the element of
+## the last row (nrow), and the column zecol] containing the threshold value
 t_noBias   <- store_res[[1]][nrow(store_res[[1]]),zecol]
 t_withBias <- store_res[[2]][nrow(store_res[[2]]),zecol]
 
 t_noBias #the thresholds
 t_withBias
+```
 
+Now apply the thresholds to your MaxEnt output maps of relative probability. For that, store the thresholds in a vector, and double them for bias/ nobias, because the threshold stays the same:
 
-# Apply thresholds to relative probability maps
-# Plot the binary maps and compare different threshold outcomes
+```{r}
 all_bias <- rep(c(t_noBias,t_withBias), each=2)
 all_bias
+```
 
-#dev.off()
-#plot(me_stack)
+Now set the thresholds to the stack. If you don't remember the stack (me_stack), plot it again.Test different thresholds and see how the predictions change:
 
+```{r}
 binary_thresh <- me_stack >= all_bias
-
-test2 <- me_stack >= 0.5 # check result with fixed threshold
-#test3 <- me_stack >= seq(0.1, 0.7, length = 4)
-
 plot(binary_thresh)
-plot(test2)
-#plot(test3)
+```
 
+```{r}
+test05 <- me_stack >= 0.5 # check result with fixed threshold of default cut-off
+plot(test05)
 
+#testSeq <- me_stack >= seq(0.1, 0.7, length = 4)
+#plot(testSeq)
+```
+
+## Analyses
+
+Now let's check how global change affects the protected areas. Does the suitability of these areas increase or decrease in the future?
+```{r}
 # Extract relative probability values inside protected areas PAs
 # check if overlay correct - only works when you have NOT aggregated the maps
 compareRaster(PA_ras,me_stack[[1]]) 
 
 ex <- which(values(PA_ras)==1)
-ex # gives Pointer to elements/ Index
+# ex # gives Pointer to elements/ Index
 ex_stack <- extract(x=me_stack, y=ex)
 head(ex_stack)
-#plot(ex_stack)
+```
 
-## Plot the difference of habitat suitability in scenarios and PAs
+Plot the difference of habitat suitability in scenarios and PAs
+```{r}
 boxplot(ex_stack,na.rm=T)
+```
 
-### Calculate no. of cells (=area) of suitable habitat in PAs
+Calculate no. of cells (=area) of suitable habitat in PAs
+
+```{r}
 ex_binary <- extract(x=binary_thresh, y=ex)
 head(ex_binary)
-ex_binary[1:2,]; colSums(ex_binary,na.rm=T) #2 cmnds in line with ; !
+## In the following, we are summing the cells with 'TRUE'
+ex_binary[1:2,]; colSums(ex_binary,na.rm=T) # 2 cmnds in line with ; !
+```
 
+Interestingly: when correcting for sampling bias, the future scenarios have the lowest number of suitable habitat inside PAs: <br>
+<br>
+curr_noBias    fut_noBias curr_withBias  fut_withBias   <br>
+      43285         63905         43430         39989   <br>
+      
+      
+```{r, echo=FALSE, eval=FALSE}
 ################# just in case for Netlogo   ###################################
 ### maps have to be smaller and instead of NA put -1 ###
 
@@ -549,15 +579,11 @@ plot(probab_agg_int, col=viridis(100))
 getwd() # that's where it is saved now
 writeRaster(probab_agg, filename="probab_agg_int",format="ascii",
             overwrite=TRUE,NAflag = -9999)
+```
 
-
-################################################################################
-### Tutorial Part III - least cost path [LCP] for connectivity
-################################################################################
-## Least cost path
-### package for LCP
+# Least cost path for connectivity
+```{r, echo=FALSE, eval=FALSE}
 #install.packages('gdistance')
-
 library(gdistance)
 #?gdistance
 
@@ -595,8 +621,10 @@ costDistance(trans, start, end) #units?
 # Make a plot
 plot(me_cr,col=viridis(100)); points(start,pch=15); points(end,pch=15)
 lines(sPath,lwd=1, col= 'red'); plot(PA_shp, border='white', lwd=0.5,add=T)
+```
 
 
+```{r, echo=FALSE, eval=FALSE}
 # where does the animal corridor intersect rivers?
 # in sf package
 River_inter1 <- st_intersection(x = River_shp_sf, y = as(sPath, "sf")) 
@@ -606,17 +634,20 @@ River_inter1 <- st_intersection(x = River_shp_sf, y = as(sPath, "sf"))
 plot(sPath,lwd=3); plot(PA_shp,border='grey',lwd=1,add=T)
 plot(River_shp,col='blue',lwd=2,add=T)
 plot(River_inter1,col='red',lwd=4,add=T); box()
+```
 
 
-
-
+```{r, echo=FALSE, eval=FALSE}
 ######## currently out of order
 # Which connections intersect the PAs?
 PA_inter1 <- st_intersection(x = PA_shp_sf, y = as(sPath, "sf")) 
 
 plot(sPath,lwd=3); plot(PA_shp,border='blue',lwd=2,add=T)
 lines(PA_inter1,col='red',lwd=4); box()
+```
 
+
+```{r, echo=FALSE, eval=FALSE}
 ### Save new line as shapefile
 crs(sPath) <- CRS('+proj=longlat +datum=WGS84')
 cp_line <- SpatialLinesDataFrame(sl=sPath,
@@ -624,11 +655,7 @@ cp_line <- SpatialLinesDataFrame(sl=sPath,
 writeOGR(obj=cp_line,dsn=output_wd,layer='costpath_line',
          driver = 'ESRI Shapefile', overwrite = TRUE)
 #### end currently out of order
-
 ################  end #######################
-
-
-
 ```
 
 
