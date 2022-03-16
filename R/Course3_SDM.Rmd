@@ -1,45 +1,53 @@
 ---
-title: "Course Species Distribution Modelling (SDM)"
-date: "`r Sys.Date()`"
-author: Stephanie Kramer-Schadt & Jürgen Niedballa
+title: "Tutorial Part III — SDM with MaxEnt"
+author: "Stephanie Kramer-Schadt & Juergen Niedballa"
+date: "`r Sys.setlocale('LC_TIME','C'); paste('Last Update', format(Sys.time(), '%B %e, %Y'))`"
 output:
   rmdformats::readthedown:
-    code_folding: show
-    self_contained: true
-    thumbnails: false
-    lightbox: false
-pkgdown:
-  as_is: true    
-editor_options: 
+    highlight: kate
+    toc_depth: 2
+    toc_float: true
+editor_options:
   chunk_output_type: console
+params:
+  date: !r Sys.Date()
 ---
-<head>
+
 <style>
-
-h1 {color: Indigo; 
-      background-color: white;
-      text-align: left;
-      <img src="C:/Users/kramer/PopDynIZW Dropbox/Steph Kramer/_GitHub/Course_SDM/D6_Logo.png" alt="d6 logo">
-
+h1 {
+  color: Orange ;
 }
-h2 {color: Indigo;} 
-p {color: Grey;}
-
+h2, h3, h4, h5, h6, legend {
+  color: Indigo ;
+}
+p {
+  line-height:170%;
+}
+#sidebar h2 {
+  background-color: Indigo;
+}
+code {
+  color: Indigo ;
+}
+.exercise {
+  color: #824b00;
+}
 </style>
-</head>
 
-
-
-```{r, results="asis", echo=FALSE, message=FALSE, warning=FALSE}
-#res <- knitr::knit_child('_example_body.Rmd', quiet = TRUE)
-#cat(res, sep = '\n')
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, 
+                      fig.width = 9, fig.height = 6, dev = "ragg_png")
+#knitr::opts_knit$set(root.dir = 'C:/Users/kramer/PopDynIZW Dropbox/Steph Kramer/_GitHub')
 ```
+
+# <span class='exercise'> Course 3 SDM with MaxEnt </span>
+
 
 # Preparations
 
 ## Load libraries
 
-```{r}
+```{r,message=FALSE}
 
 ### The packages (repetition) ###
    library(here)
@@ -135,7 +143,7 @@ plot(predictors, col= viridis(100)) # might take some time depending on your com
 
 # package sp (old, but easier for plotting)
 Borneo_shp <- readOGR(dsn=maps_wd, layer="borneo_admin",
-              stringsAsFactors=FALSE)[,c(1:3,5,7,17,18)] #only load some of the coulmns of df
+              stringsAsFactors=FALSE)[,c(1:3,5,7,17,18)] #only load some of the columns of df
 PA_shp <-  readOGR(dsn=maps_wd, layer="Bor_PA",
                    stringsAsFactors=FALSE)[,c(1:4)]
 River_shp <- readOGR(dsn=maps_wd, layer="sn_100000",
