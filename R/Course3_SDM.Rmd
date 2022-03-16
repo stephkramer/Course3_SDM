@@ -138,7 +138,7 @@ plot(predictors, col= viridis(100)) # might take some time depending on your com
 
 ### Load shapefiles
 
-```{r}
+```{r,message=FALSE}
 ### Read in some Shapefiles (repetition) ###
 
 # package sp (old, but easier for plotting)
@@ -352,6 +352,9 @@ plot(bias1, col = viridis(7)) #or col = grey.colors(7)
 # writeRaster(bias_agg, filename="bias_agg.asc", datatype='ascii',
 #            overwrite=TRUE,NAflag=-9999)
 
+## since I used setwd() to the output folder, it is automatically stored there,
+## if not, paste the path to the filename, i.e. 
+## filename=paste0(output_wd,"/bias_2022.asc")
 writeRaster(bias1, filename="bias_2022.asc", datatype='ascii',
             overwrite=TRUE,NAflag=-9999)
 ```
@@ -375,7 +378,7 @@ CELLSIZE 0.0083333337997189 <br>
 NODATA_value -9999 <br> 
 
 If this throws an error in MaxEnt, please change the <br>
-CELLSIZE from 0.0083333337997189 to *0.0083333338* by hand! That is, the header should read: <br>
+CELLSIZE from 0.0083333337997189 to **0.0083333338** by hand! That is, the header should read: <br>
 
 
 ncols         1423   <br> 
@@ -385,7 +388,7 @@ yllcorner     -4.3740129986359 <br>
 cellsize      0.0083333338  <br> 
 NODATA_value  -9999   <br> 
 
-(Please, without <br> if you use copy-paste from my .rmd course script.....)
+(Please, without '<br>' if you use copy-paste from my .rmd course script.....)
 
 ```{r}
 #### meanwhile clicking Maxent.... 
@@ -471,9 +474,10 @@ me_res
 Now we do some elegant trick: we store both files as two objects in a list! Similar to tacking rasters, a bit....
 ```{r}
 store_res <- lapply(me_res,FUN=read.csv) #store as list obj.
-head(store_res) # list object with 2 slots
+## Check the following out:
+# head(store_res) # list object with 2 slots
 # str(store_res)
-store_res[[1]]
+# store_res[[1]]
 ```
 
 We are searching for the column with the threshold.
@@ -590,7 +594,7 @@ writeRaster(probab_agg, filename="probab_agg_int",format="ascii",
 ```
 
 # Least cost path for connectivity
-```{r, echo=FALSE, eval=FALSE}
+```{r}
 #install.packages('gdistance')
 library(gdistance)
 #?gdistance
