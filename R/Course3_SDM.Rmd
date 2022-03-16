@@ -10,6 +10,8 @@ output:
     lightbox: false
 pkgdown:
   as_is: true    
+editor_options: 
+  chunk_output_type: console
 ---
 <head>
 <style>
@@ -61,14 +63,13 @@ title: "Tutorial Part III - SDM preparations"
 #cat(res, sep = '\n')
 ```
 
-
+# Preparations
+## Load libraries
 
 ```{r}
-################################################################################
-# Prepare basic data (repetition)
-################################################################################
 
 ### The packages (repetition) ###
+   library(here)
    library(sp)
    library(sf)
    library(tmap)
@@ -83,29 +84,35 @@ title: "Tutorial Part III - SDM preparations"
    library(rasterVis)
    library(unmarked)
    library(spatstat)
+```
 
+## Set the workspace
 
-
-
-
-
+```{r}
 ### The workspace  (repetition) ###
-getwd()
+getwd() # you can also use the package 'here()'
 
-root_wd <- "C:/Users/kramer/PopDynIZW Dropbox/Teaching/_TU_BiodivDynamics"
-
-# the output folder should have been created by you during Tutorial 'R goes spatial'
-output_wd <- paste(root_wd,"/","output",sep='')
-
+# my data are outside my course-folder, therefore I have to do it the old-fashioned way.
+root_wd <- "E:/PopDynIZW Dropbox/Teaching/_TU_BiodivDynamics"
 # relative to work-wd
-maps_wd <- paste(root_wd,"/","DataBorneo/BaseMaps",sep='')
-recs_wd <- paste(root_wd,"/","DataBorneo/BaseRecords",sep='')
+maps_wd <- paste(root_wd,"/","_DataBorneo/BaseMaps",sep='')
+recs_wd <- paste(root_wd,"/","_DataBorneo/BaseRecords",sep='')
+
+# the output folder should have been created by you during Tutorial 2 'R goes spatial'.
+# It should contain the hillshade.asc
+output_wd <- here('output')
 
 setwd(output_wd) ## set to the OUTPUT folder!
 getwd()
+```
 
+## Load spatial data and define the CRS
 
+### Load rasters
+
+```{r}
 ### Data import - Load spatial data (repetition) ###
+## note, here I use the 'dialect' of the old 'raster'-package.
 
 ras1 <- raster(paste(maps_wd,'/bio_asc_01.asc',sep=''))
 # assign the projection (crs - coordinate reference system)
@@ -118,9 +125,13 @@ ras42 <- raster(x = paste(maps_wd,'/bio_asc_42.asc',sep=''))
 ras42@crs <- CRS(projargs = "+init=epsg:4326") 
 
 hillsh <- raster(x = paste(output_wd,'/hillshade.asc',sep='')) 
-hillsh@crs <- CRS(projargs = "+init=epsg:4326") 
+hillsh@crs <- CRS(projargs = "+init=epsg:4326")
+```
 
+### Stack environmental variables
 
+Loading many rasters can be done in one go.
+```{r}
 ### Raster stack of environmental predictors (repetition) ###
 
 # the list.files command is very helpful to check what is in the folders
@@ -128,26 +139,38 @@ hillsh@crs <- CRS(projargs = "+init=epsg:4326")
 files <- list.files(path= maps_wd, pattern='.asc$',
                     full.names=TRUE )
 files # these are just names! To load them as spatial objects, use raster() or stack()
-predictors <- stack(files[c(9,12,22,24)])
-#plot(predictors, col= viridis(100))
+predictors <- stack(files[c(9,12,22,24)]) # note that I only load 4 rasters
 
+# set CRS:
+predictors@crs <- CRS(projargs = "+init=epsg:4326")
+```
 
+### Plot rasters
+```{r}
+plot(predictors, col= viridis(100)) # might take some time depending on your computer
+
+# what are the differences? Have a look also at the data description file in the data folder.
+```
+
+### Load shapefiles
+
+```{r}
 ### Read in some Shapefiles (repetition) ###
 
 # package sp (old, but easier for plotting)
 Borneo_shp <- readOGR(dsn=maps_wd, layer="borneo_admin",
-              stringsAsFactors=FALSE)[,c(1:3,5,7,17,18)]
+              stringsAsFactors=FALSE)[,c(1:3,5,7,17,18)] #only load some of the coulmns of df
 PA_shp <-  readOGR(dsn=maps_wd, layer="Bor_PA",
                    stringsAsFactors=FALSE)[,c(1:4)]
 River_shp <- readOGR(dsn=maps_wd, layer="sn_100000",
                      stringsAsFactors=FALSE)
 
 # package sf (new and maintained)
-# Borneo polygon
+# Borneo outline polygon
 Borneo_shp_sf <- st_read(dsn = maps_wd, 
                       layer = "borneo_admin",
                       stringsAsFactors = FALSE)[,c(1:3,5,7,17,18)]
-# Protected areas polygon
+# Protected areas (PA) polygon
 PA_shp_sf <-  st_read(dsn = maps_wd, 
                    layer = "Bor_PA",
                    stringsAsFactors = FALSE)[, c(1:4)]
@@ -155,13 +178,18 @@ PA_shp_sf <-  st_read(dsn = maps_wd,
 River_shp_sf <- st_read(dsn = maps_wd, 
                      layer = "sn_100000",
                      stringsAsFactors = FALSE)
+```
 
+### Load point df and convert to spatial object
 
+```{r}
 ### The spatial point data (species records) (repetition) ###
 
 # filename
 spec_pt_filename <- paste(recs_wd,'/','MyNewSpecies.csv', sep='')
 spec_pt_filename
+
+# you can play also with other files
 #spec_pt_filename <- paste(recs_wd,'/','DHOsim.csv',sep='')
 #spec_pt_filename <- paste(recs_wd,'/','PPLsim.csv',sep='')
 
@@ -181,35 +209,54 @@ river_recs <- read.csv(file = river_pt_filename, header=TRUE, sep=',')
 river_recs_sf <- st_as_sf(x = river_recs,
                           coords = c("long", "lat"), 
                           crs = 4326, 
-                          sf_column_name = "geometry") 
+                          sf_column_name = "geometry")
+```
 
+## Plot
 
+```{r}
 ### Plot to get an impression ###
 
-image(ras42, col=grey.colors(20))
+plot(ras42, col=grey.colors(20))
 plot(PA_shp,border='green', lwd=1.8, add=T)
-plot(sp_recs_sf, pch= '*',cex=2,col='deeppink',add=T)
-text(112, -2, 'Starting with SDMs', cex=2, col= 'red')
+plot(sp_recs_sf$geometry, pch= '*',cex=1,col='deeppink',add=T)
+text(112, 5, 'Starting with SDMs', cex=2, col= 'red')
 plot(River_shp[,3], col='dodgerblue4', add=T)
+```
 
+# Preconditions 
 
+## Checking for multicollinearity
 
-################################################################################
-### SDM preconditions check ###
-################################################################################
-
+```{r}
 ### Multicollinearity   ###
 ### The pairs plot      ###
 
-# workaround for slow computers
+# workaround for slow computers. First, aggregate the 1 km resolution into  
 agg_pred <- aggregate(x=predictors,fact=75,FUN=mean)
 plot(agg_pred)
-raster::pairs(agg_pred)
+```
 
+### Pairs plot 
+
+```{r}
+raster::pairs(agg_pred)
+```
+What do you actually see? Which method was used? Check the help! (?pairs). To make it more explicit, set the argument inside the function.
+
+```{r}
+# Plot the differences (rsiduals) between the rasters:
+diff <- raster::corLocal(x = agg_pred[[1]], y = agg_pred[[3]], method ='spearman')
+```
+
+
+```{r}
 # not_run on slow computers:
 #pairs(predictors)
+```
 
 
+```{r}
 ### Sampling bias correction ####
 ###                          ###
 
